@@ -1,0 +1,136 @@
+        <source src="bubble-pop.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // 游戏数据：剑桥雅思词汇（18 个单词，共 9 组）
+        const wordPairs = [
+            ['abandon', 'desert'],
+            ['abstract', 'summary'],
+            ['academic', 'scholarly'],
+            ['achieve', 'accomplish'],
+            ['acquire', 'obtain'],
+            ['adapt', 'adjust'],
+            ['adequate', 'sufficient'],
+            ['advocate', 'support'],
+            ['affect', 'influence']
+        ];
+
+        let gameData = [];
+        let selected = [];
+        let matched = 0;
+        let startTime = Date.now();
+        let timerInterval;
+
+        // 初始化游戏
+        function initGame() {
+            // 打乱配对顺序
+            const shuffledPairs = [...wordPairs].sort(() => Math.random() - 0.5);
+            // 合并并打乱所有单词
+            gameData = shuffledPairs.flat().sort(() => Math.random() - 0.5);
+            renderBubbles();
+            startTimer();
+        }
+
+        // 渲染泡泡
+        function renderBubbles() {
+            const container = document.getElementById('gameContainer');
+            container.innerHTML = '';
+            gameData.forEach((word, index) => {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                bubble.textContent = word;
+                bubble.dataset.index = index;
+                bubble.addEventListener('click', handleBubbleClick);
+                container.appendChild(bubble);
+            });
+        }
+
+        // 处理泡泡点击
+        function handleBubbleClick(e) {
+            const bubble = e.target;
+            const index = parseInt(bubble.dataset.index);
+            if (bubble.classList.contains('matched') || selected.includes(index)) return;
+
+            // 播放音效
+            const audio = document.getElementById('bubbleSound');
+            audio.currentTime = 0;
+            audio.play().catch(() => {});
+
+            bubble.classList.add('selected');
+            selected.push(index);
+
+            if (selected.length === 2) {
+                checkMatch();
+            }
+        }
+
+        // 检查匹配
+        function checkMatch() {
+            const [i1, i2] = selected;
+            const word1 = gameData[i1];
+            const word2 = gameData[i2];
+
+            let isMatch = false;
+            for (const pair of wordPairs) {
+                if (
+                    (pair[0] === word1 && pair[1] === word2) ||
+                    (pair[0] === word2 && pair[1] === word1)
+                ) {
+                    isMatch = true;
+                    break;
+                }
+            }
+
+            if (isMatch) {
+                // 匹配成功
+                document.querySelectorAll('.bubble.selected').forEach(b => {
+                    b.classList.remove('selected');
+                    b.classList.add('matched');
+                });
+                matched += 2;
+                if (matched === gameData.length) {
+                    endGame();
+                }
+            } else {
+                // 匹配失败
+                setTimeout(() => {
+                    document.querySelectorAll('.bubble.selected').forEach(b => {
+                        b.classList.remove('selected');
+                    });
+                }, 500);
+            }
+            selected = [];
+        }
+
+        // 计时器
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = String(Math.floor(elapsed / 60)).padStart(2, '0');
+                const seconds = String(elapsed % 60).padStart(2, '0');
+                document.getElementById('time').textContent = `${minutes}:${seconds}`;
+            }, 1000);
+        }
+
+        // 结束游戏
+        function endGame() {
+            clearInterval(timerInterval);
+            const finalTime = document.getElementById('time').textContent;
+            document.getElementById('completionTime').textContent = finalTime;
+            document.getElementById('successMessage').style.display = 'block';
+        }
+
+        // 继续挑战
+        document.getElementById('continueBtn').addEventListener('click', () => {
+            document.getElementById('successMessage').style.display = 'none';
+            matched = 0;
+            selected = [];
+            startTime = Date.now();
+            initGame();
+        });
+
+        // 启动游戏
+        initGame();
+    </script>
+</body>
+</html>
